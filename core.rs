@@ -317,6 +317,22 @@ pub fn with_meta(a: MalArgs) -> MalRet {
     }
 }
 
+fn divide(a: MalArgs) -> MalRet {
+    if a.len() != 2 {
+        return error("expecting exactly 2 args");
+    }
+    match (&a[0], &a[1]) {
+        (Int(a0), Int(a1)) => {
+            if *a1 == 0 {
+                error("division by zero")
+            } else {
+                Ok(Int(a0 / a1))
+            }
+        }
+        _ => error("expecting (int,int) args"),
+    }
+}
+
 pub fn ns() -> Vec<(&'static str, MalVal)> {
     vec![
         ("=", func(|a| Ok(Bool(a[0] == a[1])))),
@@ -370,7 +386,7 @@ pub fn ns() -> Vec<(&'static str, MalVal)> {
         ("+", func(fn_t_int_int!(Int, |i, j| { i + j }))),
         ("-", func(fn_t_int_int!(Int, |i, j| { i - j }))),
         ("*", func(fn_t_int_int!(Int, |i, j| { i * j }))),
-        ("/", func(fn_t_int_int!(Int, |i, j| { i / j }))),
+        ("/", func(divide)),
         ("time-ms", func(time_ms)),
         ("sequential?", func(fn_is_type!(List(_, _), Vector(_, _)))),
         ("list", func(|a| Ok(list(a)))),

@@ -34,3 +34,15 @@ fn test_rep_addition_too_few_args() {
         Err(_) => (), // Expected error
     }
 }
+
+#[test]
+fn test_rep_divide_by_zero() {
+    let env = mal_env();
+    initialize_mal_env(&env, vec![]);
+
+    // Should error because division by zero is not allowed
+    match rep("(/ 1 0)", &env) {
+        Ok(s) => panic!("Should have returned an error, but got: {}", s),
+        Err(_) => (), // Expected error
+    }
+}
