@@ -67,16 +67,16 @@ impl PartialEq for MalVal {
     fn eq(&self, other: &MalVal) -> bool {
         match (self, other) {
             (Nil, Nil) => true,
-            (Bool(ref a), Bool(ref b)) => a == b,
-            (Int(ref a), Int(ref b)) => a == b,
-            (Str(ref a), Str(ref b)) => a == b,
-            (Sym(ref a), Sym(ref b)) => a == b,
-            (Kwd(ref a), Kwd(ref b)) => a == b,
-            (List(ref a, _), List(ref b, _))
-            | (Vector(ref a, _), Vector(ref b, _))
-            | (List(ref a, _), Vector(ref b, _))
-            | (Vector(ref a, _), List(ref b, _)) => a == b,
-            (Hash(ref a, _), Hash(ref b, _)) => a == b,
+            (Bool(a), Bool(b)) => a == b,
+            (Int(a), Int(b)) => a == b,
+            (Str(a), Str(b)) => a == b,
+            (Sym(a), Sym(b)) => a == b,
+            (Kwd(a), Kwd(b)) => a == b,
+            (List(a, _), List(b, _))
+            | (Vector(a, _), Vector(b, _))
+            | (List(a, _), Vector(b, _))
+            | (Vector(a, _), List(b, _)) => a == b,
+            (Hash(a, _), Hash(b, _)) => a == b,
             (MalFunc { .. }, MalFunc { .. }) => false,
             _ => false,
         }

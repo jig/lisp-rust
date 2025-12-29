@@ -16,9 +16,14 @@ use crate::readline as rl_mod;
 
 macro_rules! fn_t_int_int {
     ($ret:ident, $fn:expr) => {{
-        |a: MalArgs| match (&a[0], &a[1]) {
-            (Int(a0), Int(a1)) => Ok($ret($fn(a0, a1))),
-            _ => error("expecting (int,int) args"),
+        |a: MalArgs| {
+            if a.len() != 2 {
+                return error("expecting exactly 2 args");
+            }
+            match (&a[0], &a[1]) {
+                (Int(a0), Int(a1)) => Ok($ret($fn(a0, a1))),
+                _ => error("expecting (int,int) args"),
+            }
         }
     }};
 }
