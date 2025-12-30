@@ -40,6 +40,10 @@ pub struct FuncStruct {
 pub type MalArgs = Vec<MalVal>;
 pub type MalRet = Result<MalVal, MalVal>;
 
+/// Type for readline function implementations
+/// Takes a prompt string and returns Some(input) or None on EOF
+pub type ReadlineFn = fn(&str) -> Option<String>;
+
 // type utility macros
 
 macro_rules! list {

@@ -9,7 +9,9 @@ name = "mal"
 path = "lib.rs"
 
 [dependencies]
-rustyline = "14.0"
 regex = "1.7"
 itertools = "0.13"
 fnv = "1.0.6"
+
+[dev-dependencies]
+rustyline = "14.0"
