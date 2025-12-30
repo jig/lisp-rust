@@ -1,7 +1,7 @@
 use mal::{initialize_mal_env, mal_env, mal_env_with_readline, rep};
 
 #[test]
-fn test_rep_addition() {
+fn rep_addition() {
     let env = mal_env();
     initialize_mal_env(&env, vec![]);
 
@@ -12,7 +12,7 @@ fn test_rep_addition() {
 }
 
 #[test]
-fn test_rep_addition_too_many_args() {
+fn rep_addition_too_many_args() {
     let env = mal_env();
     initialize_mal_env(&env, vec![]);
 
@@ -24,7 +24,7 @@ fn test_rep_addition_too_many_args() {
 }
 
 #[test]
-fn test_rep_addition_too_few_args() {
+fn rep_addition_too_few_args() {
     let env = mal_env();
     initialize_mal_env(&env, vec![]);
 
@@ -36,7 +36,7 @@ fn test_rep_addition_too_few_args() {
 }
 
 #[test]
-fn test_rep_divide_by_zero() {
+fn rep_divide_by_zero() {
     let env = mal_env();
     initialize_mal_env(&env, vec![]);
 
@@ -48,7 +48,7 @@ fn test_rep_divide_by_zero() {
 }
 
 #[test]
-fn test_rep_str() {
+fn rep_str() {
     let env = mal_env();
     initialize_mal_env(&env, vec![]);
 
@@ -59,7 +59,7 @@ fn test_rep_str() {
 }
 
 #[test]
-fn test_readline_without_function() {
+fn readline_without_function() {
     // Test that readline is not available when not provided
     let env = mal_env();
     initialize_mal_env(&env, vec![]);
@@ -72,7 +72,7 @@ fn test_readline_without_function() {
 }
 
 #[test]
-fn test_readline_with_function() {
+fn readline_with_function() {
     // Mock readline function for testing
     fn mock_readline(prompt: &str) -> Option<String> {
         assert_eq!(prompt, "test> ");
