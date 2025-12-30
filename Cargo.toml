@@ -1,16 +1,12 @@
 [package]
 name = "mal"
 version = "0.1.0"
-authors = ["root"]
+authors = ["jordi.inyigo"]
 edition = "2024"
 
 [lib]
 name = "mal"
 path = "lib.rs"
-
-[[bin]]
-name = "mal"
-path = "main.rs"
 
 [dependencies]
 rustyline = "14.0"
