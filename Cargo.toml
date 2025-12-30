@@ -9,7 +9,6 @@ name = "mal"
 path = "lib.rs"
 
 [dependencies]
-regex = "1.7"
 itertools = "0.13"
 fnv = "1.0.6"
 scanner = { git = "https://github.com/jig/scanner-rust", version = "0.1.1" }

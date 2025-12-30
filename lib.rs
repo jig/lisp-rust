@@ -6,7 +6,6 @@ use itertools::Itertools;
 
 extern crate fnv;
 extern crate itertools;
-extern crate regex;
 
 #[macro_use]
 pub mod types;

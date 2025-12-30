@@ -1,4 +1,3 @@
-use regex::{Captures, Regex};
 use std::rc::Rc;
 use scanner::{Scanner, EOF};
 
@@ -29,10 +28,6 @@ impl Reader {
     }
 }
 
-thread_local! {
-    static UNESCAPE_RE: Regex = Regex::new(r#"\\(.)"#).unwrap();
-}
-
 fn tokenize(str: &str) -> Vec<String> {
     let mut scanner = Scanner::init(str.as_bytes());
     let mut tokens = vec![];
@@ -50,12 +45,32 @@ fn tokenize(str: &str) -> Vec<String> {
 }
 
 fn unescape_str(s: &str) -> String {
-    UNESCAPE_RE.with(|re| {
-        re.replace_all(s, |caps: &Captures| {
-            if &caps[1] == "n" { "\n" } else { &caps[1] }.to_string()
-        })
-        .to_string()
-    })
+    let mut result = String::new();
+    let mut chars = s.chars();
+
+    while let Some(ch) = chars.next() {
+        if ch == '\\' {
+            if let Some(escaped) = chars.next() {
+                match escaped {
+                    'n' => result.push('\n'),
+                    't' => result.push('\t'),
+                    'r' => result.push('\r'),
+                    '\\' => result.push('\\'),
+                    '"' => result.push('"'),
+                    _ => {
+                        result.push('\\');
+                        result.push(escaped);
+                    }
+                }
+            } else {
+                result.push('\\');
+            }
+        } else {
+            result.push(ch);
+        }
+    }
+
+    result
 }
 
 fn read_atom(rdr: &mut Reader) -> MalRet {
