@@ -46,3 +46,15 @@ fn test_rep_divide_by_zero() {
         Err(_) => (), // Expected error
     }
 }
+
+#[test]
+fn test_rep_str() {
+    let env = mal_env();
+    initialize_mal_env(&env, vec![]);
+
+    match rep("(str \"Hello, \" \"world!\")", &env) {
+        Ok(s) => assert_eq!(s, "\"Hello, world!\""),
+        Err(_) => panic!("rep() returned an error"),
+    }
+}
+
