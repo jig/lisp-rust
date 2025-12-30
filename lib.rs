@@ -1,11 +1,22 @@
 #![allow(non_snake_case)]
+#![no_std]
 
-use std::rc::Rc;
+extern crate alloc;
+
+use alloc::rc::Rc;
+use alloc::vec;
+use alloc::vec::Vec;
+use alloc::string::{String, ToString};
+use alloc::format;
+
 use fnv::FnvHashMap;
 use itertools::Itertools;
 
 extern crate fnv;
 extern crate itertools;
+
+pub mod system;
+pub use crate::system::SystemOps;
 
 #[macro_use]
 pub mod types;
@@ -17,6 +28,7 @@ pub mod reader;
 pub use crate::env::{env_bind, env_get, env_new, env_set, env_sets, Env};
 #[macro_use]
 pub mod core;
+pub use crate::core::ns;
 
 impl MalVal {
     pub fn apply(&self, args: MalArgs) -> MalRet {
@@ -88,10 +100,7 @@ pub fn eval(orig_ast: &MalVal, orig_env: &Env) -> MalRet {
     let mut live_env;
 
     'tco: loop {
-        match env_get(env, "DEBUG-EVAL") {
-            None | Some(Bool(false)) | Some(Nil) => (),
-            _ => println!("EVAL: {}", print(ast)),
-        }
+        // Debug eval is disabled in no_std builds
         match ast {
             Sym(s) => match env_get(env, s) {
                 Some(r) => return Ok(r),

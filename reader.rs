@@ -1,4 +1,9 @@
-use std::rc::Rc;
+use alloc::rc::Rc;
+use alloc::vec;
+use alloc::vec::Vec;
+use alloc::string::{String, ToString};
+use alloc::format;
+
 use scanner::{Scanner, EOF};
 
 use crate::types::MalVal::{Bool, Int, Kwd, List, Nil, Str, Sym};

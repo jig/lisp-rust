@@ -1,5 +1,7 @@
-use std::cell::RefCell;
-use std::rc::Rc;
+use alloc::rc::Rc;
+use core::cell::RefCell;
+use alloc::vec::Vec;
+use alloc::string::{String, ToString};
 //use std::collections::HashMap;
 use fnv::FnvHashMap;
 

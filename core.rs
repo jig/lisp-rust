@@ -1,10 +1,12 @@
-use std::fs::File;
-use std::io::Read;
-use std::rc::Rc;
-use std::time::{SystemTime, UNIX_EPOCH};
+use alloc::rc::Rc;
+use core::cell::RefCell;
+use alloc::vec;
+use alloc::vec::Vec;
+use alloc::string::{String, ToString};
 
 use crate::printer::pr_seq;
 use crate::reader::read_str;
+
 use crate::types::MalVal::{
     Atom, Bool, Func, Hash, Int, Kwd, List, MalFunc, Nil, Str, Sym, Vector,
 };
@@ -53,24 +55,6 @@ fn symbol(a: MalArgs) -> MalRet {
         Str(ref s) => Ok(Sym(s.to_string())),
         _ => error("illegal symbol call"),
     }
-}
-
-fn slurp(f: &str) -> MalRet {
-    let mut s = String::new();
-    match File::open(f).and_then(|mut f| f.read_to_string(&mut s)) {
-        Ok(_) => Ok(Str(s)),
-        Err(e) => error(&e.to_string()),
-    }
-}
-
-fn time_ms(_a: MalArgs) -> MalRet {
-    let ms_e = match SystemTime::now().duration_since(UNIX_EPOCH) {
-        Ok(d) => d,
-        Err(e) => return error(&format!("{:?}", e)),
-    };
-    Ok(Int(
-        ms_e.as_secs() as i64 * 1000 + ms_e.subsec_nanos() as i64 / 1_000_000
-    ))
 }
 
 fn get(a: MalArgs) -> MalRet {
@@ -252,7 +236,7 @@ pub fn count(a: MalArgs) -> MalRet {
 }
 
 pub fn atom(a: MalArgs) -> MalRet {
-    Ok(Atom(Rc::new(std::cell::RefCell::new(a[0].clone()))))
+    Ok(Atom(Rc::new(RefCell::new(a[0].clone()))))
 }
 
 pub fn deref(a: MalArgs) -> MalRet {
@@ -356,20 +340,17 @@ pub fn ns() -> Vec<(&'static str, MalVal)> {
         ("str", func(|a| Ok(Str(pr_seq(&a, false, "", "", ""))))),
         (
             "prn",
-            func(|a| {
-                println!("{}", pr_seq(&a, true, "", "", " "));
+            func(|_a| {
                 Ok(Nil)
             }),
         ),
         (
             "println",
-            func(|a| {
-                println!("{}", pr_seq(&a, false, "", "", " "));
+            func(|_a| {
                 Ok(Nil)
             }),
         ),
         ("read-string", func(fn_str!(read_str))),
-        ("slurp", func(fn_str!(slurp))),
         ("<", func(fn_t_int_int!(Bool, |i, j| { i < j }))),
         ("<=", func(fn_t_int_int!(Bool, |i, j| { i <= j }))),
         (">", func(fn_t_int_int!(Bool, |i, j| { i > j }))),
@@ -378,7 +359,6 @@ pub fn ns() -> Vec<(&'static str, MalVal)> {
         ("-", func(fn_t_int_int!(Int, |i, j| { i - j }))),
         ("*", func(fn_t_int_int!(Int, |i, j| { i * j }))),
         ("/", func(divide)),
-        ("time-ms", func(time_ms)),
         ("sequential?", func(fn_is_type!(List(_, _), Vector(_, _)))),
         ("list", func(|a| Ok(list(a)))),
         ("list?", func(fn_is_type!(List(_, _)))),

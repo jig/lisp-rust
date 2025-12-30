@@ -1,5 +1,11 @@
-use std::cell::RefCell;
-use std::rc::Rc;
+use alloc::rc::Rc;
+use core::cell::RefCell;
+#[allow(unused_imports)]
+use alloc::vec;
+use alloc::vec::Vec;
+use alloc::string::{String, ToString};
+use alloc::format;
+
 //use std::collections::HashMap;
 use fnv::FnvHashMap;
 use itertools::Itertools;
