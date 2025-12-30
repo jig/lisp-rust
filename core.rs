@@ -2,7 +2,6 @@ use std::fs::File;
 use std::io::Read;
 use std::rc::Rc;
 use std::time::{SystemTime, UNIX_EPOCH};
-use std::cell::RefCell;
 
 use crate::printer::pr_seq;
 use crate::reader::read_str;
@@ -10,21 +9,9 @@ use crate::types::MalVal::{
     Atom, Bool, Func, Hash, Int, Kwd, List, MalFunc, Nil, Str, Sym, Vector,
 };
 use crate::types::{
-    list, FuncStruct, MalArgs, MalRet, MalVal, ReadlineFn, _assoc, error, func, hash_map, unwrap_map_key,
+    list, FuncStruct, MalArgs, MalRet, MalVal, _assoc, error, func, hash_map, unwrap_map_key,
     vector, wrap_map_key,
 };
-
-// Thread-local storage for the readline function
-thread_local! {
-    static READLINE_FN: RefCell<Option<ReadlineFn>> = RefCell::new(None);
-}
-
-/// Set the readline function to be used by the readline core function
-pub fn set_readline_fn(readline_fn: Option<ReadlineFn>) {
-    READLINE_FN.with(|f| {
-        *f.borrow_mut() = readline_fn;
-    });
-}
 
 macro_rules! fn_t_int_int {
     ($ret:ident, $fn:expr) => {{
@@ -66,18 +53,6 @@ fn symbol(a: MalArgs) -> MalRet {
         Str(ref s) => Ok(Sym(s.to_string())),
         _ => error("illegal symbol call"),
     }
-}
-
-fn readline(p: &str) -> MalRet {
-    READLINE_FN.with(|f| {
-        match &*f.borrow() {
-            Some(rl_fn) => match rl_fn(p) {
-                Some(s) => Ok(Str(s)),
-                None => Ok(Nil),
-            },
-            None => error("readline function not available"),
-        }
-    })
 }
 
 fn slurp(f: &str) -> MalRet {
@@ -394,7 +369,6 @@ pub fn ns() -> Vec<(&'static str, MalVal)> {
             }),
         ),
         ("read-string", func(fn_str!(read_str))),
-        ("readline", func(fn_str!(readline))),
         ("slurp", func(fn_str!(slurp))),
         ("<", func(fn_t_int_int!(Bool, |i, j| { i < j }))),
         ("<=", func(fn_t_int_int!(Bool, |i, j| { i <= j }))),

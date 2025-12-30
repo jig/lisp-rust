@@ -24,13 +24,14 @@ pub fn simple_readline(prompt: &str) -> Option<String> {
 }
 
 fn main() {
-    use mal::{initialize_mal_env, mal_env_with_readline, rep};
+    use mal::{initialize_mal_env, mal_env, rep};
 
-    // Create environment with simple readline implementation
-    let env = mal_env_with_readline(Some(simple_readline));
+    // Create environment - readline is no longer part of core
+    let env = mal_env();
     initialize_mal_env(&env, vec![]);
 
     println!("MAL REPL (simple readline)");
+    println!("Note: readline function is not available in MAL - this is handled by Rust");
     println!("Press Ctrl+D to exit");
 
     // REPL loop

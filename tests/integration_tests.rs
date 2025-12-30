@@ -1,4 +1,4 @@
-use mal::{initialize_mal_env, mal_env, mal_env_with_readline, rep};
+use mal::{initialize_mal_env, mal_env, rep};
 
 #[test]
 fn rep_addition() {
@@ -59,32 +59,14 @@ fn rep_str() {
 }
 
 #[test]
-fn readline_without_function() {
-    // Test that readline is not available when not provided
+fn undefined_function() {
+    // Test that calling undefined functions results in an error
     let env = mal_env();
     initialize_mal_env(&env, vec![]);
 
-    // readline should not be defined in the environment
+    // readline is not part of core anymore
     match rep("(readline \"prompt> \")", &env) {
-        Ok(_) => panic!("readline should not be available without providing a readline function"),
+        Ok(_) => panic!("readline should not be defined"),
         Err(_) => (), // Expected error - readline is not defined
-    }
-}
-
-#[test]
-fn readline_with_function() {
-    // Mock readline function for testing
-    fn mock_readline(prompt: &str) -> Option<String> {
-        assert_eq!(prompt, "test> ");
-        Some("test input".to_string())
-    }
-
-    let env = mal_env_with_readline(Some(mock_readline));
-    initialize_mal_env(&env, vec![]);
-
-    // readline should be available and return the mocked value
-    match rep("(readline \"test> \")", &env) {
-        Ok(s) => assert_eq!(s, "\"test input\""),
-        Err(e) => panic!("readline should be available: {}", e.pr_str(true)),
     }
 }

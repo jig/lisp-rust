@@ -10,7 +10,7 @@ extern crate itertools;
 #[macro_use]
 pub mod types;
 pub use crate::types::MalVal::{Bool, Func, Hash, List, MalFunc, Nil, Str, Sym, Vector};
-pub use crate::types::{error, list, vector, FuncStruct, MalArgs, MalRet, MalVal, ReadlineFn};
+pub use crate::types::{error, list, vector, FuncStruct, MalArgs, MalRet, MalVal};
 pub mod env;
 pub mod printer;
 pub mod reader;
@@ -281,14 +281,6 @@ pub fn re(str: &str, env: &Env) {
 
 /// Initialize a new MAL environment with core functions
 pub fn mal_env() -> Env {
-    mal_env_with_readline(None)
-}
-
-/// Initialize a new MAL environment with core functions and optional readline
-pub fn mal_env_with_readline(readline_fn: Option<types::ReadlineFn>) -> Env {
-    // Set the readline function in thread-local storage
-    core::set_readline_fn(readline_fn);
-
     let repl_env = env_new(None);
 
     // core.rs: defined using rust

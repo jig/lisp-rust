@@ -46,11 +46,14 @@ pub fn rustyline_readline(prompt: &str) -> Option<String> {
 }
 
 fn main() {
-    use mal::{initialize_mal_env, mal_env_with_readline, rep};
+    use mal::{initialize_mal_env, mal_env, rep};
 
-    // Create environment with rustyline readline implementation
-    let env = mal_env_with_readline(Some(rustyline_readline));
+    // Create environment - readline is no longer part of core
+    let env = mal_env();
     initialize_mal_env(&env, vec![]);
+
+    println!("MAL REPL (rustyline)");
+    println!("Note: readline function is not available in MAL - this is handled by Rust");
 
     // REPL loop
     loop {
