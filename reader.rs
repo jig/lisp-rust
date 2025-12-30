@@ -1,5 +1,6 @@
 use regex::{Captures, Regex};
 use std::rc::Rc;
+use scanner::{Scanner, EOF};
 
 use crate::types::MalVal::{Bool, Int, Kwd, List, Nil, Str, Sym};
 use crate::types::{error, hash_map, list, vector, MalRet, MalVal};
@@ -29,25 +30,23 @@ impl Reader {
 }
 
 thread_local! {
-    static TOKENIZE_RE: Regex = Regex::new(
-        r###"[\s,]*(~@|[\[\]{}()'`~^@]|"(?:\\.|[^\\"])*"?|;.*|[^\s\[\]{}('"`,;)]+)"###
-    ).unwrap();
     static UNESCAPE_RE: Regex = Regex::new(r#"\\(.)"#).unwrap();
-    static INT_RE: Regex = Regex::new(r"^-?[0-9]+$").unwrap();
-    static STR_RE: Regex = Regex::new(r#""(?:\\.|[^\\"])*""#).unwrap();
 }
 
 fn tokenize(str: &str) -> Vec<String> {
-    TOKENIZE_RE.with(|re| {
-        let mut res = vec![];
-        for cap in re.captures_iter(str) {
-            if cap[1].starts_with(';') {
-                continue;
-            }
-            res.push(String::from(&cap[1]));
+    let mut scanner = Scanner::init(str.as_bytes());
+    let mut tokens = vec![];
+
+    loop {
+        let tok = scanner.scan();
+        if tok == EOF {
+            break;
         }
-        res
-    })
+        // Skip comments - scanner already handles them
+        tokens.push(scanner.token_text());
+    }
+
+    tokens
 }
 
 fn unescape_str(s: &str) -> String {
@@ -66,9 +65,12 @@ fn read_atom(rdr: &mut Reader) -> MalRet {
         "false" => Ok(Bool(false)),
         "true" => Ok(Bool(true)),
         _ => {
-            if INT_RE.with(|re| re.is_match(&token)) {
+            // Check if it's an integer (starts with optional - followed by digits)
+            if token.chars().all(|c| c.is_ascii_digit() || c == '-')
+                && token.parse::<i64>().is_ok() {
                 Ok(Int(token.parse().unwrap()))
-            } else if STR_RE.with(|re| re.is_match(&token)) {
+            } else if token.starts_with('\"') && token.ends_with('\"') {
+                // String literal
                 Ok(Str(unescape_str(&token[1..token.len() - 1])))
             } else if token.starts_with('\"') {
                 error("expected '\"', got EOF")
@@ -143,4 +145,55 @@ pub fn read_str(str: &str) -> MalRet {
         return error("no input");
     }
     read_form(&mut Reader { pos: 0, tokens })
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::types::MalVal::{Int, List, Str, Sym};
+
+    #[test]
+    fn read_str_simple_sum() {
+        match super::read_str("(+ 1 2)") {
+            Ok(List(lst, _)) => {
+                assert_eq!(lst.len(), 3);
+                match &lst[0] {
+                    Sym(s) => assert_eq!(s, "+"),
+                    _ => panic!("Expected Sym(+)"),
+                }
+                match &lst[1] {
+                    Int(n) => assert_eq!(*n, 1),
+                    _ => panic!("Expected Int(1)"),
+                }
+                match &lst[2] {
+                    Int(n) => assert_eq!(*n, 2),
+                    _ => panic!("Expected Int(2)"),
+                }
+            },
+            Ok(_) => panic!("Expected List"),
+            Err(_) => panic!("rep() returned an error"),
+        }
+    }
+
+    #[test]
+    fn read_str_simple_chr() {
+        match super::read_str("(str \"aaa\" \"bbb\")") {
+            Ok(List(lst, _)) => {
+                assert_eq!(lst.len(), 3);
+                match &lst[0] {
+                    Sym(s) => assert_eq!(s, "str"),
+                    _ => panic!("Expected Sym(+)"),
+                }
+                match &lst[1] {
+                    Str(s) => assert_eq!(s, "aaa"),
+                    _ => panic!("Expected Str(aaa)"),
+                }
+                match &lst[2] {
+                    Str(s) => assert_eq!(s, "bbb"),
+                    _ => panic!("Expected Str(bbb)"),
+                }
+            },
+            Ok(_) => panic!("Expected List"),
+            Err(_) => panic!("rep() returned an error"),
+        }
+    }
 }

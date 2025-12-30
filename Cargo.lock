@@ -127,6 +127,7 @@ dependencies = [
  "itertools",
  "regex",
  "rustyline",
+ "scanner",
 ]
 
 [[package]]
@@ -229,6 +230,11 @@ dependencies = [
  "utf8parse",
  "windows-sys 0.52.0",
 ]
+
+[[package]]
+name = "scanner"
+version = "0.1.1"
+source = "git+https://github.com/jig/scanner-rust#72de197e3ed092824659187c03f0344cca7065d8"
 
 [[package]]
 name = "smallvec"

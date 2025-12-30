@@ -315,7 +315,7 @@ pub fn initialize_mal_env(repl_env: &Env, argv: Vec<String>) {
     re("(def! *host-language* \"rust\")", repl_env);
     re("(def! not (fn* (a) (if a false true)))", repl_env);
     re(
-        "(def! load-file (fn* (f) (eval (read-string (str \"(do \" (slurp f) \"\nnil)\")))))",
+        r#"(def! load-file (fn* (f) (eval (read-string (str "(do " (slurp f) "\nnil)")))))"#,
         repl_env,
     );
     re("(defmacro! cond (fn* (& xs) (if (> (count xs) 0) (list 'if (first xs) (if (> (count xs) 1) (nth xs 1) (throw \"odd number of forms to cond\")) (cons 'cond (rest (rest xs)))))))",
