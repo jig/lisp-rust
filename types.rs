@@ -11,7 +11,7 @@ use itertools::Itertools;
 use crate::FnvHashMap;
 
 use crate::env::Env;
-use crate::types::MalVal::{Bool, Func, Hash, Int, Kwd, List, MalFunc, Nil, Str, Sym, Vector};
+use crate::types::MalVal::{Bool, Func, Hash, Int, Kwd, List, MalFunc, NativeClosure, Nil, Str, Sym, Vector};
 
 // Function closures and atoms may create cyclic dependencies, so
 // reference counting should be replaced at least for these two kinds
@@ -31,6 +31,7 @@ pub enum MalVal {
     Hash(Rc<FnvHashMap<String, MalVal>>, Rc<MalVal>),
     Func(fn(MalArgs) -> MalRet, Rc<MalVal>),
     MalFunc(FuncStruct),
+    NativeClosure(Rc<dyn Fn(MalArgs) -> MalRet>, Rc<MalVal>),
     Atom(Rc<RefCell<MalVal>>),
 }
 
@@ -84,13 +85,42 @@ impl PartialEq for MalVal {
             | (Vector(a, _), List(b, _)) => a == b,
             (Hash(a, _), Hash(b, _)) => a == b,
             (MalFunc { .. }, MalFunc { .. }) => false,
+            (NativeClosure(_, _), NativeClosure(_, _)) => false,
             _ => false,
         }
     }
 }
 
+/// Creates a built-in function from a function pointer.
+///
+/// Use this for simple built-in functions that don't need to capture any environment.
+/// The function must be a plain function pointer (fn), not a closure.
 pub fn func(f: fn(MalArgs) -> MalRet) -> MalVal {
     Func(f, Rc::new(Nil))
+}
+
+/// Creates a native closure that can capture variables from its environment.
+///
+/// Unlike `func()`, this accepts closures that can capture variables. This is useful
+/// when you need to create functions that access external state, like a global environment.
+///
+/// # Examples
+///
+/// ```ignore
+/// let env = mal_env();
+/// let eval_fn = func_closure(move |args| {
+///     // Can access env here
+///     eval(args[0].clone(), &env)
+/// });
+/// ```
+///
+/// The closure is wrapped in `Rc` to make it cloneable, which is required for `MalVal`.
+pub fn func_closure<F>(f: F) -> MalVal
+where
+    F: Fn(MalArgs) -> MalRet + 'static,
+{
+    use crate::types::MalVal::NativeClosure;
+    NativeClosure(Rc::new(f), Rc::new(Nil))
 }
 
 pub fn _assoc(mut hm: FnvHashMap<String, MalVal>, kvs: MalArgs) -> MalRet {

@@ -4,7 +4,7 @@ use alloc::vec::Vec;
 use alloc::format;
 
 use crate::types::MalVal::{
-    Atom, Bool, Func, Hash, Int, Kwd, List, MalFunc, Nil, Str, Sym, Vector,
+    Atom, Bool, Func, Hash, Int, Kwd, List, MalFunc, NativeClosure, Nil, Str, Sym, Vector,
 };
 use crate::types::{unwrap_map_key, FuncStruct, MalVal};
 
@@ -50,6 +50,7 @@ impl MalVal {
             MalFunc(FuncStruct {
                 ast: a, params: p, ..
             }) => format!("(fn* {} {})", p.pr_str(true), a.pr_str(true)),
+            NativeClosure(_, _) => String::from("#<native-closure>"),
             Atom(a) => format!("(atom {})", a.borrow().pr_str(true)),
         }
     }
