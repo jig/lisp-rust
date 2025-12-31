@@ -245,6 +245,13 @@ pub fn eval(orig_ast: &MalVal, orig_env: &Env) -> MalRet {
                             }
                             return f.apply(args);
                         }
+                        f @ NativeClosure(_, _) => {
+                            let mut args: MalArgs = vec![];
+                            for i in 1..l.len() {
+                                args.push(eval(&l[i], env)?);
+                            }
+                            return f.apply(args);
+                        }
                         MalFunc(FuncStruct {
                             ast: mast,
                             env: menv,
