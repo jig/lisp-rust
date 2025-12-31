@@ -4,6 +4,7 @@ use alloc::vec;
 use alloc::vec::Vec;
 use alloc::string::{String, ToString};
 
+use crate::MalVal::NativeClosure;
 use crate::printer::pr_seq;
 use crate::reader::read_str;
 
@@ -279,6 +280,7 @@ pub fn get_meta(a: MalArgs) -> MalRet {
     match a[0] {
         List(_, ref meta) | Vector(_, ref meta) | Hash(_, ref meta) => Ok((**meta).clone()),
         Func(_, ref meta) => Ok((**meta).clone()),
+        NativeClosure(_, ref meta) => Ok((**meta).clone()),
         MalFunc(FuncStruct { ref meta, .. }) => Ok((**meta).clone()),
         _ => error("meta not supported by type"),
     }
@@ -291,6 +293,7 @@ pub fn with_meta(a: MalArgs) -> MalRet {
         Vector(ref l, _) => Ok(Vector(l.clone(), m)),
         Hash(ref l, _) => Ok(Hash(l.clone(), m)),
         Func(ref l, _) => Ok(Func(*l, m)),
+        NativeClosure(ref f, _) => Ok(NativeClosure(f.clone(), m)),
         MalFunc(ref f @ FuncStruct { .. }) => Ok(MalFunc(FuncStruct {
             meta: m,
             ..f.clone()
@@ -335,6 +338,7 @@ pub fn ns() -> Vec<(&'static str, MalVal)> {
                     is_macro: false,
                     ..
                 }),
+                NativeClosure(_, _),
                 Func(_, _)
             )),
         ),

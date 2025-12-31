@@ -23,7 +23,7 @@ pub use crate::system::SystemOps;
 
 #[macro_use]
 pub mod types;
-pub use crate::types::MalVal::{Bool, Func, Hash, List, MalFunc, Nil, Str, Sym, Vector};
+pub use crate::types::MalVal::{Bool, Func, Hash, List, MalFunc, NativeClosure, Nil, Str, Sym, Vector};
 pub use crate::types::{error, list, vector, FuncStruct, MalArgs, MalRet, MalVal};
 pub mod env;
 pub mod printer;
@@ -37,6 +37,7 @@ impl MalVal {
     pub fn apply(&self, args: MalArgs) -> MalRet {
         match self {
             Func(f, _) => f(args),
+            NativeClosure(f, _) => f(args),
             MalFunc(FuncStruct {
                 ast,
                 env,
