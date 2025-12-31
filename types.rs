@@ -6,9 +6,9 @@ use alloc::vec::Vec;
 use alloc::string::{String, ToString};
 use alloc::format;
 
-//use std::collections::HashMap;
-use fnv::FnvHashMap;
 use itertools::Itertools;
+
+use crate::FnvHashMap;
 
 use crate::env::Env;
 use crate::types::MalVal::{Bool, Func, Hash, Int, Kwd, List, MalFunc, Nil, Str, Sym, Vector};

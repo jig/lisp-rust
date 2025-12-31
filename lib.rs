@@ -9,11 +9,14 @@ use alloc::vec::Vec;
 use alloc::string::{String, ToString};
 use alloc::format;
 
-use fnv::FnvHashMap;
 use itertools::Itertools;
 
 extern crate fnv;
 extern crate itertools;
+extern crate hashbrown;
+
+// Define FnvHashMap for no_std using hashbrown + FnvBuildHasher
+pub type FnvHashMap<K, V> = hashbrown::HashMap<K, V, fnv::FnvBuildHasher>;
 
 pub mod system;
 pub use crate::system::SystemOps;

@@ -2,8 +2,8 @@ use alloc::rc::Rc;
 use core::cell::RefCell;
 use alloc::vec::Vec;
 use alloc::string::{String, ToString};
-//use std::collections::HashMap;
-use fnv::FnvHashMap;
+
+use crate::FnvHashMap;
 
 use crate::types::MalVal::{List, Sym, Vector};
 use crate::types::{error, list, MalRet, MalVal};
