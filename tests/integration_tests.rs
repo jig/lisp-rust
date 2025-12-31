@@ -70,3 +70,41 @@ fn undefined_function() {
         Err(_) => (), // Expected error - readline is not defined
     }
 }
+
+#[test]
+fn eval() {
+    let env = mal_env();
+    initialize_mal_env(&env, vec![]);
+
+    match rep("(def! x 10)", &env) {
+        Ok(s) => assert_eq!(s, "10"),
+        Err(_) => panic!("rep() returned an error"),
+    }
+
+    match rep("(* x 2)", &env) {
+        Ok(s) => assert_eq!(s, "20"),
+        Err(_) => panic!("rep() returned an error"),
+    }
+}
+
+#[test]
+fn eval_read_string() {
+    let env = mal_env();
+    initialize_mal_env(&env, vec![]);
+
+    match rep("(read-string \"(+ 1 10)\")", &env) {
+        Ok(s) => assert_eq!(s, "(+ 1 10)"),
+        Err(_) => panic!("rep() returned an error"),
+    }
+}
+
+#[test]
+fn eval_eval() {
+    let env = mal_env();
+    initialize_mal_env(&env, vec![]);
+
+    match rep("(eval (read-string \"(+ 1 10)\"))", &env) {
+        Ok(s) => assert_eq!(s, "11"),
+        Err(_) => panic!("rep() returned an error"),
+    }
+}

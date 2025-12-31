@@ -41,11 +41,17 @@ macro_rules! fn_is_type {
   }};
 }
 
+#[macro_export]
 macro_rules! fn_str {
     ($fn:expr) => {{
-        |a: MalArgs| match &a[0] {
-            Str(a0) => $fn(&a0),
-            _ => error("expecting (str) arg"),
+        |a: MalArgs| {
+            if a.len() != 1 {
+                return error("expecting exactly 1 arg");
+            }
+            match &a[0] {
+                Str(a0) => $fn(&a0),
+                _ => error("expecting (str) arg"),
+            }
         }
     }};
 }
@@ -338,18 +344,6 @@ pub fn ns() -> Vec<(&'static str, MalVal)> {
         ),
         ("pr-str", func(|a| Ok(Str(pr_seq(&a, true, "", "", " "))))),
         ("str", func(|a| Ok(Str(pr_seq(&a, false, "", "", ""))))),
-        (
-            "prn",
-            func(|_a| {
-                Ok(Nil)
-            }),
-        ),
-        (
-            "println",
-            func(|_a| {
-                Ok(Nil)
-            }),
-        ),
         ("read-string", func(fn_str!(read_str))),
         ("<", func(fn_t_int_int!(Bool, |i, j| { i < j }))),
         ("<=", func(fn_t_int_int!(Bool, |i, j| { i <= j }))),

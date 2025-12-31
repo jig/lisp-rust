@@ -1,9 +1,16 @@
 // Example readline implementation using rustyline
 // This shows how to use the MAL library with a rustyline-based readline function
 
+#[macro_use(fn_str)]
+extern crate mal;
 extern crate rustyline;
 
 use std::cell::RefCell;
+use std::sync::OnceLock;
+
+use mal::types::MalVal::{Int,  Str, Nil};
+use mal::types::{MalArgs, MalRet, error, func};
+use mal::printer::pr_seq;
 
 struct ReadlineState {
     e: rustyline::Editor<(), rustyline::history::DefaultHistory>,
@@ -45,32 +52,112 @@ pub fn rustyline_readline(prompt: &str) -> Option<String> {
     })
 }
 
-fn main() {
-    use mal::{initialize_mal_env, mal_env, rep};
-
-    // Create environment - readline is no longer part of core
-    let env = mal_env();
-    initialize_mal_env(&env, vec![]);
-
-    println!("MAL REPL (rustyline)");
-    println!("Note: readline function is not available in MAL - this is handled by Rust");
-
-    // REPL loop
-    loop {
-        match rustyline_readline("user> ") {
-            Some(line) => {
-                if line.is_empty() {
-                    continue;
-                }
-                match rep(&line, &env) {
-                    Ok(out) => println!("{}", out),
-                    Err(e) => println!("Error: {}", e.pr_str(true)),
-                }
-            }
-            None => {
-                println!();
-                break;
+fn slurp(a: MalArgs) -> MalRet {
+    if a.len() != 1 {
+        return error("read-file expects 1 argument");
+    }
+    match a[0] {
+        Str(ref s) => {
+            match std::fs::read_to_string(s).map_err(|_| error("failed to read file")) {
+                Err(e) => {e}
+                Ok(content) => {Ok(Str(content))}
             }
         }
+        _ => error("file name must be string"),
     }
+}
+
+static BOOT_TIME: OnceLock<std::time::Instant> = OnceLock::new();
+
+fn time_ns(a: MalArgs) -> MalRet {
+    if a.len() != 0 {
+        return error("time-ns/us/ms/s expect 0 arguments");
+    }
+    let boot = BOOT_TIME.get().unwrap();
+    let elapsed = boot.elapsed();
+    let ns = elapsed.as_secs() as i64 * 1_000_000_000 + elapsed.subsec_nanos() as i64;
+    Ok(Int(ns))
+}
+
+fn time_us(a: MalArgs) -> MalRet {
+    let Int(ns) = time_ns(a)? else { unreachable!() };
+    Ok(Int(ns / 1_000i64))
+}
+
+fn time_ms(a: MalArgs) -> MalRet {
+    let Int(ns) = time_ns(a)? else { unreachable!() };
+    Ok(Int(ns / 1_000_000i64))
+}
+
+fn time_s(a: MalArgs) -> MalRet {
+    let Int(ns) = time_ns(a)? else { unreachable!() };
+    Ok(Int(ns / 1_000_000_000i64))
+}
+
+fn readline(p: &str) -> MalRet {
+    match rustyline_readline(p) {
+        Some(s) => Ok(Str(s)),
+        None => Ok(Nil),
+    }
+}
+
+use mal::{initialize_mal_env, mal_env, rep, env_sets, Env};
+
+thread_local! {
+    static REPL_ENV: Env = {
+        let repl_env = mal_env();
+
+        // Setup eval with proper REPL_ENV closure
+        env_sets(&repl_env, "eval", func(|a| {
+            REPL_ENV.with(|e| mal::eval(&a[0], e))
+        }));
+
+        repl_env
+    };
+}
+
+fn main() {
+    // Initialize BOOT_TIME at program start
+    BOOT_TIME.get_or_init(|| std::time::Instant::now());
+
+    REPL_ENV.with(|env| {
+        initialize_mal_env(&env, vec![]);
+        env_sets(&env, "slurp", func(slurp));
+        env_sets(&env, "time-ns", func(time_ns));
+        env_sets(&env, "time-ms", func(time_ms));
+        env_sets(&env, "time-us", func(time_us));
+        env_sets(&env, "time-s", func(time_s));
+        env_sets(&env, "prn", func(|a| {
+                    println!("{}", pr_seq(&a, true, "", "", " "));
+                    Ok(Nil)
+                }));
+        env_sets(&env, "println", func(|a| {
+                    println!("{}", pr_seq(&a, false, "", "", " "));
+                    Ok(Nil)
+                }),);
+        env_sets(&env, "readline", func(fn_str!(readline)));
+
+        // eval(orig_ast: &MalVal, orig_env: &Env) -> MalRet
+
+        println!("MAL REPL (rustyline)");
+        println!("Note: readline function is not available in MAL - this is handled by Rust");
+
+        // REPL loop
+        loop {
+            match rustyline_readline("user> ") {
+                Some(line) => {
+                    if line.is_empty() {
+                        continue;
+                    }
+                    match rep(&line, &env) {
+                        Ok(out) => println!("{}", out),
+                        Err(e) => println!("Error: {}", e.pr_str(true)),
+                    }
+                }
+                None => {
+                    println!();
+                    break;
+                }
+            }
+        }    });
 }
