@@ -38,9 +38,9 @@ macro_rules! fn_t_float_float {
             }
             match (&a[0], &a[1]) {
                 (Float(a0), Float(a1)) => Ok($ret($fn(a0, a1))),
-                (Float(a0), Int(a1)) => Ok($ret($fn(a0, &(*a1 as f64)))),
-                (Int(a0), Float(a1)) => Ok($ret($fn(&(*a0 as f64), a1))),
-                (Int(a0), Int(a1)) => Ok($ret($fn(&(*a0 as f64), &(*a1 as f64)))),
+                (Float(a0), Int(a1)) => Ok($ret($fn(a0, &(*a1 as f32)))),
+                (Int(a0), Float(a1)) => Ok($ret($fn(&(*a0 as f32), a1))),
+                (Int(a0), Int(a1)) => Ok($ret($fn(&(*a0 as f32), &(*a1 as f32)))),
                 _ => error("expecting (float/int, float/int) args"),
             }
         }
@@ -351,21 +351,21 @@ fn fdivide(a: MalArgs) -> MalRet {
             if *a1 == 0 {
                 error("division by zero")
             } else {
-                Ok(Float(a0 / &(*a1 as f64)))
+                Ok(Float(a0 / &(*a1 as f32)))
             }
         }
         (Int(a0), Float(a1)) => {
             if *a1 == 0.0 {
                 error("division by zero")
             } else {
-                Ok(Float(&(*a0 as f64) / a1))
+                Ok(Float(&(*a0 as f32) / a1))
             }
         }
         (Int(a0), Int(a1)) => {
             if *a1 == 0 {
                 error("division by zero")
             } else {
-                Ok(Float(&(*a0 as f64) / &(*a1 as f64)))
+                Ok(Float(&(*a0 as f32) / &(*a1 as f32)))
             }
         }
         _ => error("expecting (float/int, float/int) args"),
@@ -423,7 +423,7 @@ pub fn ns() -> Vec<(&'static str, MalVal)> {
         ("f/", func(fdivide)),
         ("float", func(|a| {
             match &a[0] {
-                Int(i) => Ok(Float(*i as f64)),
+                Int(i) => Ok(Float(*i as f32)),
                 Float(f) => Ok(Float(*f)),
                 _ => error("float: invalid argument"),
             }

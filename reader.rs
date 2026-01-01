@@ -90,7 +90,7 @@ fn read_atom(rdr: &mut Reader) -> MalRet {
                 && token.parse::<i64>().is_ok() {
                 Ok(Int(token.parse().unwrap()))
             } else if token.chars().all(|c| c.is_ascii_digit() || c == '-' || c == '.')
-                && token.parse::<f64>().is_ok() {
+                && token.parse::<f32>().is_ok() {
                 Ok(Float(token.parse().unwrap()))
             } else if token.starts_with('\"') && token.ends_with('\"') {
                 // String literal
