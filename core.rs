@@ -9,7 +9,7 @@ use crate::printer::pr_seq;
 use crate::reader::read_str;
 
 use crate::types::MalVal::{
-    Atom, Bool, Func, Hash, Int, Kwd, List, MalFunc, Nil, Str, Sym, Vector,
+    Atom, Bool, Func, Hash, Int, Float, Kwd, List, MalFunc, Nil, Str, Sym, Vector,
 };
 use crate::types::{
     list, FuncStruct, MalArgs, MalRet, MalVal, _assoc, error, func, hash_map, unwrap_map_key,
@@ -25,6 +25,23 @@ macro_rules! fn_t_int_int {
             match (&a[0], &a[1]) {
                 (Int(a0), Int(a1)) => Ok($ret($fn(a0, a1))),
                 _ => error("expecting (int,int) args"),
+            }
+        }
+    }};
+}
+
+macro_rules! fn_t_float_float {
+    ($ret:ident, $fn:expr) => {{
+        |a: MalArgs| {
+            if a.len() != 2 {
+                return error("expecting exactly 2 args");
+            }
+            match (&a[0], &a[1]) {
+                (Float(a0), Float(a1)) => Ok($ret($fn(a0, a1))),
+                (Float(a0), Int(a1)) => Ok($ret($fn(a0, &(*a1 as f64)))),
+                (Int(a0), Float(a1)) => Ok($ret($fn(&(*a0 as f64), a1))),
+                (Int(a0), Int(a1)) => Ok($ret($fn(&(*a0 as f64), &(*a1 as f64)))),
+                _ => error("expecting (float/int, float/int) args"),
             }
         }
     }};
@@ -318,6 +335,43 @@ fn divide(a: MalArgs) -> MalRet {
     }
 }
 
+fn fdivide(a: MalArgs) -> MalRet {
+    if a.len() != 2 {
+        return error("expecting exactly 2 args");
+    }
+    match (&a[0], &a[1]) {
+        (Float(a0), Float(a1)) => {
+            if *a1 == 0.0 {
+                error("division by zero")
+            } else {
+                Ok(Float(a0 / a1))
+            }
+        }
+        (Float(a0), Int(a1)) => {
+            if *a1 == 0 {
+                error("division by zero")
+            } else {
+                Ok(Float(a0 / &(*a1 as f64)))
+            }
+        }
+        (Int(a0), Float(a1)) => {
+            if *a1 == 0.0 {
+                error("division by zero")
+            } else {
+                Ok(Float(&(*a0 as f64) / a1))
+            }
+        }
+        (Int(a0), Int(a1)) => {
+            if *a1 == 0 {
+                error("division by zero")
+            } else {
+                Ok(Float(&(*a0 as f64) / &(*a1 as f64)))
+            }
+        }
+        _ => error("expecting (float/int, float/int) args"),
+    }
+}
+
 pub fn ns() -> Vec<(&'static str, MalVal)> {
     vec![
         ("=", func(|a| Ok(Bool(a[0] == a[1])))),
@@ -331,6 +385,8 @@ pub fn ns() -> Vec<(&'static str, MalVal)> {
         ("keyword", func(keyword)),
         ("keyword?", func(fn_is_type!(Kwd(_)))),
         ("number?", func(fn_is_type!(Int(_)))),
+        ("int?", func(fn_is_type!(Int(_)))),
+        ("float?", func(fn_is_type!(Float(_)))),
         (
             "fn?",
             func(fn_is_type!(
@@ -357,6 +413,28 @@ pub fn ns() -> Vec<(&'static str, MalVal)> {
         ("-", func(fn_t_int_int!(Int, |i, j| { i - j }))),
         ("*", func(fn_t_int_int!(Int, |i, j| { i * j }))),
         ("/", func(divide)),
+        ("f<", func(fn_t_float_float!(Bool, |i, j| { i < j }))),
+        ("f<=", func(fn_t_float_float!(Bool, |i, j| { i <= j }))),
+        ("f>", func(fn_t_float_float!(Bool, |i, j| { i > j }))),
+        ("f>=", func(fn_t_float_float!(Bool, |i, j| { i >= j }))),
+        ("f+", func(fn_t_float_float!(Float, |i, j| { i + j }))),
+        ("f-", func(fn_t_float_float!(Float, |i, j| { i - j }))),
+        ("f*", func(fn_t_float_float!(Float, |i, j| { i * j }))),
+        ("f/", func(fdivide)),
+        ("float", func(|a| {
+            match &a[0] {
+                Int(i) => Ok(Float(*i as f64)),
+                Float(f) => Ok(Float(*f)),
+                _ => error("float: invalid argument"),
+            }
+        })),
+        ("int", func(|a| {
+            match &a[0] {
+                Int(i) => Ok(Int(*i)),
+                Float(f) => Ok(Int(*f as i64)),
+                _ => error("int: invalid argument"),
+            }
+        })),
         ("sequential?", func(fn_is_type!(List(_, _), Vector(_, _)))),
         ("list", func(|a| Ok(list(a)))),
         ("list?", func(fn_is_type!(List(_, _)))),

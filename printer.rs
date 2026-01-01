@@ -4,7 +4,7 @@ use alloc::vec::Vec;
 use alloc::format;
 
 use crate::types::MalVal::{
-    Atom, Bool, Func, Hash, Int, Kwd, List, MalFunc, NativeClosure, Nil, Str, Sym, Vector,
+    Atom, Bool, Func, Hash, Int, Float, Kwd, List, MalFunc, NativeClosure, Nil, Str, Sym, Vector,
 };
 use crate::types::{unwrap_map_key, FuncStruct, MalVal};
 
@@ -27,7 +27,7 @@ impl MalVal {
             Bool(true) => String::from("true"),
             Bool(false) => String::from("false"),
             Int(i) => format!("{}", i),
-            //Float(f)    => format!("{}", f),
+            Float(f)    => format!("{}", f),
             Kwd(s) => format!(":{}", s),
             Str(s) => {
                 if print_readably {

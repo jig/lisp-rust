@@ -22,7 +22,7 @@ pub enum MalVal {
     Nil,
     Bool(bool),
     Int(i64),
-    //Float(f64),
+    Float(f64),
     Str(String),
     Sym(String),
     Kwd(String),
