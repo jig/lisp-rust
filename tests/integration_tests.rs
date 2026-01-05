@@ -33,6 +33,30 @@ fn reader_unfinished_string() {
 }
 
 #[test]
+fn reader_multiple_expressions() {
+    let env = mal_env();
+
+    match rep("\"hello\" \"world\"", &env) {
+        Ok(s) => {
+            // TODO(jig): lisp must return both expressions ("hello" and "world") till no more expressions are available
+            // so rep() must work like a reader that returns one expression at a time in stream
+            if s == "\"hello\"" {
+                ()
+            } else {
+                panic!("Unexpected result: {}", s);
+            }
+        },
+        Err(e) => {
+            if e.pr_str(false) == "unexpected tokens after first expression" {
+                ()
+            } else {
+                panic!("Unexpected error message: {}", e.pr_str(false));
+            }
+        },
+    }
+}
+
+#[test]
 fn rep_addition() {
     let env = mal_env();
     initialize_mal_env(&env, vec![]);
