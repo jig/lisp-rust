@@ -98,7 +98,7 @@ fn read_atom(rdr: &mut Reader) -> MalRet {
                 // String literal
                 Ok(Str(unescape_str(&token[1..token.len() - 1])))
             } else if token.starts_with('\"') {
-                error("expected '\"', got EOF")
+                error("INCOMPLETE:expected '\"', got EOF")
             } else if let Some(keyword) = token.strip_prefix(':') {
                 Ok(Kwd(String::from(keyword)))
             } else {
@@ -114,7 +114,7 @@ fn read_seq(rdr: &mut Reader, end: &str) -> Result<Vec<MalVal>, MalVal> {
     loop {
         let token = match rdr.peek() {
             Ok(t) => t,
-            Err(_) => return error(&format!("expected '{}', got EOF", end)),
+            Err(_) => return error(&format!("INCOMPLETE:expected '{}', got EOF", end)),
         };
         if token == end {
             break;

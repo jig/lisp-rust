@@ -7,10 +7,11 @@ fn reader_unfinished_expr() {
     match rep("(+ 1", &env) {
         Ok(s) => panic!("Should have returned an error, but got: {}", s),
         Err(e) => {
-            if e.pr_str(false) == "expected ')', got EOF" {
+            let err_msg = e.pr_str(false);
+            if err_msg == "INCOMPLETE:expected ')', got EOF" {
                 ()
             } else {
-                panic!("Unexpected error message: {}", e.pr_str(false));
+                panic!("Unexpected error message: {}", err_msg);
             }
         },
     }
@@ -23,10 +24,11 @@ fn reader_unfinished_string() {
     match rep("\"hello", &env) {
         Ok(s) => panic!("Should have returned an error, but got: {}", s),
         Err(e) => {
-            if e.pr_str(false) == "expected '\"', got EOF" {
+            let err_msg = e.pr_str(false);
+            if err_msg == "INCOMPLETE:expected '\"', got EOF" {
                 ()
             } else {
-                panic!("Unexpected error message: {}", e.pr_str(false));
+                panic!("Unexpected error message: {}", err_msg);
             }
         },
     }
