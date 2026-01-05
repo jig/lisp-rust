@@ -314,7 +314,7 @@ pub fn ns() -> Vec<(&'static str, MalVal)> {
         ("string?", func(fn_is_type!(Str(_)))),
         ("keyword", func(keyword)),
         ("keyword?", func(fn_is_type!(Kwd(_)))),
-        ("number?", func(fn_is_type!(Int(_)))),
+        ("number?", func(fn_is_type!(Int(_) | Float(_)))),
         ("int?", func(fn_is_type!(Int(_)))),
         ("float?", func(fn_is_type!(Float(_)))),
         (
@@ -392,76 +392,103 @@ pub fn ns() -> Vec<(&'static str, MalVal)> {
     ]
 }
 
+// arithmetic operations over array of ints/floats
+
+fn opArray(unity: i64, op_closure_int: fn(i64, i64) -> i64, op_closure_float: fn(f32, f32) -> f32, a: MalArgs) -> MalRet {
+    if a.len() == 0 {
+        return Ok(Int(unity));
+    }
+
+    let mut result_int: i64;
+    let mut result_float: f32;
+    let mut try_int: bool;
+
+    match &a[0] {
+        Int(i) => {
+            result_int = *i;
+            result_float = 0.0;
+            try_int = true;
+        }
+        Float(f) => {
+            result_int = 0;
+            result_float = *f;
+            try_int = false;
+        },
+        _ => return error("expecting (int/float, int/float, ...) args"),
+    }
+    if a.len() == 1 {
+        if try_int {
+            return Ok(Int(result_int));
+        } else {
+            return Ok(Float(result_float));
+        }
+    }
+
+
+    for arg in a[1..].iter() {
+        match arg {
+            // all ints so far:
+            Int(i) if try_int => result_int = op_closure_int(result_int, *i),
+
+            // float encountered previously, switch to float result:
+            Int(i) => result_float = op_closure_float(result_float, *i as f32),
+
+            // first encountered float, switch to float result:
+            Float (f) if try_int=> {
+                result_float = op_closure_float(*f, result_int as f32);
+                // switch to float mode:
+                try_int = false;
+            }
+
+            // already in float mode:
+            Float (f) => result_float = op_closure_float(result_float, *f),
+
+            // error case:
+            _ => return error("expecting (int/float, int/float, ...) args"),
+        }
+    }
+    if try_int {
+        Ok(Int(result_int))
+    } else {
+        Ok(Float(result_float))
+    }
+}
+
 fn addition(a: MalArgs) -> MalRet {
-    if a.len() != 2 {
-        return error("expecting exactly 2 args");
-    }
-    match (&a[0], &a[1]) {
-        (Int(a0), Int(a1)) => Ok(Int(a0 + a1)),
-        (Float(a0), Float(a1)) => Ok(Float(a0 + a1)),
-        (Float(a0), Int(a1)) => Ok(Float(a0 + &(*a1 as f32))),
-        (Int(a0), Float(a1)) => Ok(Float(&(*a0 as f32) + a1)),
-        _ => error("expecting (float/int, float/int) args"),
-    }
+    opArray(0, |x:i64, y:i64| {x+y}, |x:f32, y:f32| {x+y}, a)
 }
 
 fn substraction(a: MalArgs) -> MalRet {
-    if a.len() != 2 {
-        return error("expecting exactly 2 args");
-    }
-    match (&a[0], &a[1]) {
-        (Int(a0), Int(a1)) => Ok(Int(a0 - a1)),
-        (Float(a0), Float(a1)) => Ok(Float(a0 - a1)),
-        (Float(a0), Int(a1)) => Ok(Float(a0 - &(*a1 as f32))),
-        (Int(a0), Float(a1)) => Ok(Float(&(*a0 as f32) - a1)),
-        _ => error("expecting (float/int, float/int) args"),
-    }
+    opArray(0, |x:i64, y:i64| {x-y}, |x:f32, y:f32| {x-y}, a)
 }
 
 fn multiplication(a: MalArgs) -> MalRet {
-    if a.len() != 2 {
-        return error("expecting exactly 2 args");
-    }
-    match (&a[0], &a[1]) {
-        (Int(a0), Int(a1)) => Ok(Int(a0 * a1)),
-        (Float(a0), Float(a1)) => Ok(Float(a0 * a1)),
-        (Float(a0), Int(a1)) => Ok(Float(a0 * &(*a1 as f32))),
-        (Int(a0), Float(a1)) => Ok(Float(&(*a0 as f32) * a1)),
-        _ => error("expecting (float/int, float/int) args"),
-    }
+    opArray(1, |x:i64, y:i64| {x*y}, |x:f32, y:f32| {x*y}, a)
 }
 
 fn division(a: MalArgs) -> MalRet {
-    if a.len() != 2 {
-        return error("expecting exactly 2 args");
+    if a.len() == 0 {
+        return Ok(Int(1));
     }
-    match (&a[0], &a[1]) {
-        (Int(a0), Int(a1)) => {
-            if *a1 == 0 {
-                return error("division by zero");
+    if a.len() == 1 {
+        match &a[0] {
+            Int(i) => {
+                return Ok(Int(*i));
             }
-            Ok(Int(a0 / a1))
-        }
-        (Float(a0), Float(a1)) => {
-            if *a1 == 0.0 {
-                return error("division by zero");
+            Float(f) => {
+                return Ok(Float(*f));
             }
-            Ok(Float(a0 / a1))
+            _ =>  return error("expecting (int/float, int/float, ...) args"),
         }
-        (Float(a0), Int(a1)) => {
-            if *a1 == 0 {
-                return error("division by zero");
-            }
-            Ok(Float(a0 / &(*a1 as f32)))
-        }
-        (Int(a0), Float(a1)) => {
-            if *a1 == 0.0 {
-                return error("division by zero");
-            }
-            Ok(Float(&(*a0 as f32) / a1))
-        }
-        _ => error("expecting () args"),
     }
+    for arg in a[1..].iter() {
+        match arg {
+            Int(i) if *i == 0 => return error("division by zero"),
+            Float(f) if *f == 0.0 => return error("division by zero"),
+            _ => {}
+        }
+    }
+    opArray(1, |x:i64, y:i64| {x/y}, |x:f32, y:f32| {x/y}, a)
 }
 
 fn less_than(a: MalArgs) -> MalRet {
