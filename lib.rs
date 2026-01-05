@@ -7,6 +7,7 @@ use alloc::rc::Rc;
 use alloc::vec;
 use alloc::vec::Vec;
 use alloc::string::{String, ToString};
+use alloc::str::Chars;
 use alloc::format;
 
 use itertools::Itertools;
@@ -282,6 +283,8 @@ pub fn print(ast: &MalVal) -> String {
     ast.pr_str(true)
 }
 
+/// REPL variants
+
 /// Main REPL function: Read-Eval-Print
 pub fn rep(str: &str, env: &Env) -> Result<String, MalVal> {
     let ast = read(str)?;
@@ -297,6 +300,59 @@ pub fn re(str: &str, env: &Env) {
         }
     }
     panic!("error during startup");
+}
+
+/// Process a stream of characters and return a stream of result strings
+/// Each MAL expression is read, evaluated, and printed
+pub fn rep_stream_to_string<'a>(
+    char_reader: Chars<'a>,
+    env: &'a Env,
+) -> impl Iterator<Item = String> + 'a {
+    use crate::reader::MalStream;
+
+    let mal_stream = MalStream::new(char_reader);
+
+    mal_stream.map(move |result: MalRet| match result {
+        Ok(expr) => match eval(&expr, env) {
+            Ok(val) => print(&val),
+            Err(e) => format!("Error: {}", e.pr_str(true)),
+        },
+        Err(e) => format!("Parse error: {}", e.pr_str(true)),
+    })
+}
+
+/// Process a stream of characters and return a stream of evaluated MalVals
+/// Returns raw MalRet results (not printed strings)
+pub fn rep_stream_to_malret<'a>(
+    char_reader: Chars<'a>,
+    env: &'a Env,
+) -> impl Iterator<Item = MalRet> + 'a {
+    use crate::reader::MalStream;
+
+    let mal_stream = MalStream::new(char_reader);
+
+    mal_stream.map(move |result: MalRet| match result {
+        Ok(expr) => eval(&expr, env),
+        Err(e) => Err(e), // Pass parse errors through
+    })
+}
+
+/// Process a stream of characters and return Vec of evaluated MalVals
+/// Returns raw MalRet results (not printed strings)
+pub fn rep_stream_to_malret_vec<'a>(
+    char_reader: Chars<'a>,
+    env: &'a Env,
+) -> Vec<MalRet> {
+    rep_stream_to_malret(char_reader, env).collect()
+}
+
+/// Process a stream of characters and collect into Vec of result strings
+/// Each MAL expression is read, evaluated, and printed
+pub fn rep_stream_to_string_vec<'a>(
+    char_reader: Chars<'a>,
+    env: &'a Env,
+) -> Vec<String> {
+    rep_stream_to_string(char_reader, env).collect()
 }
 
 /// Initialize a new MAL environment with core functions
