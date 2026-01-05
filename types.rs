@@ -11,7 +11,7 @@ use itertools::Itertools;
 use crate::FnvHashMap;
 
 use crate::env::Env;
-use crate::types::MalVal::{Bool, Func, Hash, Int, Kwd, List, MalFunc, NativeClosure, Nil, Str, Sym, Vector};
+use crate::types::MalVal::{Bool, Func, Hash, Int, Float, Kwd, List, MalFunc, NativeClosure, Nil, Str, Sym, Vector};
 
 // Function closures and atoms may create cyclic dependencies, so
 // reference counting should be replaced at least for these two kinds
@@ -76,6 +76,12 @@ impl PartialEq for MalVal {
             (Nil, Nil) => true,
             (Bool(a), Bool(b)) => a == b,
             (Int(a), Int(b)) => a == b,
+            (Float(a), Float(b)) => a == b,
+
+            // TODO(jig): I might review these two lines after
+            (Int(a), Float(b)) => (*a as f32) == *b,
+            (Float(a), Int(b)) => *a == (*b as f32),
+
             (Str(a), Str(b)) => a == b,
             (Sym(a), Sym(b)) => a == b,
             (Kwd(a), Kwd(b)) => a == b,

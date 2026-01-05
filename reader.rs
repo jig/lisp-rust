@@ -78,6 +78,8 @@ fn unescape_str(s: &str) -> String {
     result
 }
 
+// TODO(jig): consider use isize instead of i64 for integer type
+
 fn read_atom(rdr: &mut Reader) -> MalRet {
     let token = rdr.next()?;
     match &token[..] {
@@ -88,10 +90,10 @@ fn read_atom(rdr: &mut Reader) -> MalRet {
             // Check if it's an integer (starts with optional - followed by digits)
             if token.chars().all(|c| c.is_ascii_digit() || c == '-')
                 && token.parse::<i64>().is_ok() {
-                Ok(Int(token.parse().unwrap()))
+                Ok(Int(token.parse::<i64>().unwrap()))
             } else if token.chars().all(|c| c.is_ascii_digit() || c == '-' || c == '.')
                 && token.parse::<f32>().is_ok() {
-                Ok(Float(token.parse().unwrap()))
+                Ok(Float(token.parse::<f32>().unwrap()))
             } else if token.starts_with('\"') && token.ends_with('\"') {
                 // String literal
                 Ok(Str(unescape_str(&token[1..token.len() - 1])))

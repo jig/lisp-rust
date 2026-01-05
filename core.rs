@@ -16,36 +16,19 @@ use crate::types::{
     vector, wrap_map_key,
 };
 
-macro_rules! fn_t_int_int {
-    ($ret:ident, $fn:expr) => {{
-        |a: MalArgs| {
-            if a.len() != 2 {
-                return error("expecting exactly 2 args");
-            }
-            match (&a[0], &a[1]) {
-                (Int(a0), Int(a1)) => Ok($ret($fn(a0, a1))),
-                _ => error("expecting (int,int) args"),
-            }
-        }
-    }};
-}
-
-macro_rules! fn_t_float_float {
-    ($ret:ident, $fn:expr) => {{
-        |a: MalArgs| {
-            if a.len() != 2 {
-                return error("expecting exactly 2 args");
-            }
-            match (&a[0], &a[1]) {
-                (Float(a0), Float(a1)) => Ok($ret($fn(a0, a1))),
-                (Float(a0), Int(a1)) => Ok($ret($fn(a0, &(*a1 as f32)))),
-                (Int(a0), Float(a1)) => Ok($ret($fn(&(*a0 as f32), a1))),
-                (Int(a0), Int(a1)) => Ok($ret($fn(&(*a0 as f32), &(*a1 as f32)))),
-                _ => error("expecting (float/int, float/int) args"),
-            }
-        }
-    }};
-}
+// macro_rules! fn_t_int_int {
+//     ($ret:ident, $fn:expr) => {{
+//         |a: MalArgs| {
+//             if a.len() != 2 {
+//                 return error("expecting exactly 2 args");
+//             }
+//             match (&a[0], &a[1]) {
+//                 (Int(a0), Int(a1)) => Ok($ret($fn(a0, a1))),
+//                 _ => error("expecting (int,int) args"),
+//             }
+//         }
+//     }};
+// }
 
 macro_rules! fn_is_type {
   ($($ps:pat),*) => {{
@@ -319,59 +302,6 @@ pub fn with_meta(a: MalArgs) -> MalRet {
     }
 }
 
-fn divide(a: MalArgs) -> MalRet {
-    if a.len() != 2 {
-        return error("expecting exactly 2 args");
-    }
-    match (&a[0], &a[1]) {
-        (Int(a0), Int(a1)) => {
-            if *a1 == 0 {
-                error("division by zero")
-            } else {
-                Ok(Int(a0 / a1))
-            }
-        }
-        _ => error("expecting (int,int) args"),
-    }
-}
-
-fn fdivide(a: MalArgs) -> MalRet {
-    if a.len() != 2 {
-        return error("expecting exactly 2 args");
-    }
-    match (&a[0], &a[1]) {
-        (Float(a0), Float(a1)) => {
-            if *a1 == 0.0 {
-                error("division by zero")
-            } else {
-                Ok(Float(a0 / a1))
-            }
-        }
-        (Float(a0), Int(a1)) => {
-            if *a1 == 0 {
-                error("division by zero")
-            } else {
-                Ok(Float(a0 / &(*a1 as f32)))
-            }
-        }
-        (Int(a0), Float(a1)) => {
-            if *a1 == 0.0 {
-                error("division by zero")
-            } else {
-                Ok(Float(&(*a0 as f32) / a1))
-            }
-        }
-        (Int(a0), Int(a1)) => {
-            if *a1 == 0 {
-                error("division by zero")
-            } else {
-                Ok(Float(&(*a0 as f32) / &(*a1 as f32)))
-            }
-        }
-        _ => error("expecting (float/int, float/int) args"),
-    }
-}
-
 pub fn ns() -> Vec<(&'static str, MalVal)> {
     vec![
         ("=", func(|a| Ok(Bool(a[0] == a[1])))),
@@ -405,22 +335,14 @@ pub fn ns() -> Vec<(&'static str, MalVal)> {
         ("pr-str", func(|a| Ok(Str(pr_seq(&a, true, "", "", " "))))),
         ("str", func(|a| Ok(Str(pr_seq(&a, false, "", "", ""))))),
         ("read-string", func(fn_str!(read_str))),
-        ("<", func(fn_t_int_int!(Bool, |i, j| { i < j }))),
-        ("<=", func(fn_t_int_int!(Bool, |i, j| { i <= j }))),
-        (">", func(fn_t_int_int!(Bool, |i, j| { i > j }))),
-        (">=", func(fn_t_int_int!(Bool, |i, j| { i >= j }))),
-        ("+", func(fn_t_int_int!(Int, |i, j| { i + j }))),
-        ("-", func(fn_t_int_int!(Int, |i, j| { i - j }))),
-        ("*", func(fn_t_int_int!(Int, |i, j| { i * j }))),
-        ("/", func(divide)),
-        ("f<", func(fn_t_float_float!(Bool, |i, j| { i < j }))),
-        ("f<=", func(fn_t_float_float!(Bool, |i, j| { i <= j }))),
-        ("f>", func(fn_t_float_float!(Bool, |i, j| { i > j }))),
-        ("f>=", func(fn_t_float_float!(Bool, |i, j| { i >= j }))),
-        ("f+", func(fn_t_float_float!(Float, |i, j| { i + j }))),
-        ("f-", func(fn_t_float_float!(Float, |i, j| { i - j }))),
-        ("f*", func(fn_t_float_float!(Float, |i, j| { i * j }))),
-        ("f/", func(fdivide)),
+        ("<", func(less_than)),
+        ("<=", func(less_equal)),
+        (">", func(greater_than)),
+        (">=", func(greater_equal)),
+        ("+", func(addition)),
+        ("-", func(substraction)),
+        ("*", func(multiplication)),
+        ("/", func(division)),
         ("float", func(|a| {
             match &a[0] {
                 Int(i) => Ok(Float(*i as f32)),
@@ -468,4 +390,128 @@ pub fn ns() -> Vec<(&'static str, MalVal)> {
         ("reset!", func(reset_bang)),
         ("swap!", func(swap_bang)),
     ]
+}
+
+fn addition(a: MalArgs) -> MalRet {
+    if a.len() != 2 {
+        return error("expecting exactly 2 args");
+    }
+    match (&a[0], &a[1]) {
+        (Int(a0), Int(a1)) => Ok(Int(a0 + a1)),
+        (Float(a0), Float(a1)) => Ok(Float(a0 + a1)),
+        (Float(a0), Int(a1)) => Ok(Float(a0 + &(*a1 as f32))),
+        (Int(a0), Float(a1)) => Ok(Float(&(*a0 as f32) + a1)),
+        _ => error("expecting (float/int, float/int) args"),
+    }
+}
+
+fn substraction(a: MalArgs) -> MalRet {
+    if a.len() != 2 {
+        return error("expecting exactly 2 args");
+    }
+    match (&a[0], &a[1]) {
+        (Int(a0), Int(a1)) => Ok(Int(a0 - a1)),
+        (Float(a0), Float(a1)) => Ok(Float(a0 - a1)),
+        (Float(a0), Int(a1)) => Ok(Float(a0 - &(*a1 as f32))),
+        (Int(a0), Float(a1)) => Ok(Float(&(*a0 as f32) - a1)),
+        _ => error("expecting (float/int, float/int) args"),
+    }
+}
+
+fn multiplication(a: MalArgs) -> MalRet {
+    if a.len() != 2 {
+        return error("expecting exactly 2 args");
+    }
+    match (&a[0], &a[1]) {
+        (Int(a0), Int(a1)) => Ok(Int(a0 * a1)),
+        (Float(a0), Float(a1)) => Ok(Float(a0 * a1)),
+        (Float(a0), Int(a1)) => Ok(Float(a0 * &(*a1 as f32))),
+        (Int(a0), Float(a1)) => Ok(Float(&(*a0 as f32) * a1)),
+        _ => error("expecting (float/int, float/int) args"),
+    }
+}
+
+fn division(a: MalArgs) -> MalRet {
+    if a.len() != 2 {
+        return error("expecting exactly 2 args");
+    }
+    match (&a[0], &a[1]) {
+        (Int(a0), Int(a1)) => {
+            if *a1 == 0 {
+                return error("division by zero");
+            }
+            Ok(Int(a0 / a1))
+        }
+        (Float(a0), Float(a1)) => {
+            if *a1 == 0.0 {
+                return error("division by zero");
+            }
+            Ok(Float(a0 / a1))
+        }
+        (Float(a0), Int(a1)) => {
+            if *a1 == 0 {
+                return error("division by zero");
+            }
+            Ok(Float(a0 / &(*a1 as f32)))
+        }
+        (Int(a0), Float(a1)) => {
+            if *a1 == 0.0 {
+                return error("division by zero");
+            }
+            Ok(Float(&(*a0 as f32) / a1))
+        }
+        _ => error("expecting () args"),
+    }
+}
+
+fn less_than(a: MalArgs) -> MalRet {
+    if a.len() != 2 {
+        return error("expecting exactly 2 args");
+    }
+    match (&a[0], &a[1]) {
+        (Int(a0), Int(a1)) => Ok(Bool(a0 < a1)),
+        (Float(a0), Float(a1)) => Ok(Bool(a0 < a1)),
+        (Float(a0), Int(a1)) => { Ok(Bool(a0 < &(*a1 as f32))) },
+        (Int(a0), Float(a1)) => { Ok(Bool(&(*a0 as f32) < a1)) },
+        _ => error("expecting (float/int, float/int) args"),
+    }
+}
+
+fn less_equal(a: MalArgs) -> MalRet {
+    if a.len() != 2 {
+        return error("expecting exactly 2 args");
+    }
+    match (&a[0], &a[1]) {
+        (Int(a0), Int(a1)) => Ok(Bool(a0 <= a1)),
+        (Float(a0), Float(a1)) => Ok(Bool(a0 <= a1)),
+        (Float(a0), Int(a1)) => { Ok(Bool(a0 <= &(*a1 as f32))) },
+        (Int(a0), Float(a1)) => { Ok(Bool(&(*a0 as f32) <= a1)) },
+        _ => error("expecting (float/int, float/int) args"),
+    }
+}
+
+fn greater_than(a: MalArgs) -> MalRet {
+    if a.len() != 2 {
+        return error("expecting exactly 2 args");
+    }
+    match (&a[0], &a[1]) {
+        (Int(a0), Int(a1)) => Ok(Bool(a0 > a1)),
+        (Float(a0), Float(a1)) => Ok(Bool(a0 > a1)),
+        (Float(a0), Int(a1)) => { Ok(Bool(a0 > &(*a1 as f32))) },
+        (Int(a0), Float(a1)) => { Ok(Bool(&(*a0 as f32) > a1)) },
+        _ => error("expecting (float/int, float/int) args"),
+    }
+}
+
+fn greater_equal(a: MalArgs) -> MalRet {
+    if a.len() != 2 {
+        return error("expecting exactly 2 args");
+    }
+    match (&a[0], &a[1]) {
+        (Int(a0), Int(a1)) => Ok(Bool(a0 >= a1)),
+        (Float(a0), Float(a1)) => Ok(Bool(a0 >= a1)),
+        (Float(a0), Int(a1)) => { Ok(Bool(a0 >= &(*a1 as f32))) },
+        (Int(a0), Float(a1)) => { Ok(Bool(&(*a0 as f32) >= a1)) },
+        _ => error("expecting (float/int, float/int) args"),
+    }
 }
