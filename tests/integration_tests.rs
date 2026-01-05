@@ -1,6 +1,38 @@
 use mal::{initialize_mal_env, mal_env, rep};
 
 #[test]
+fn reader_unfinished_expr() {
+    let env = mal_env();
+
+    match rep("(+ 1", &env) {
+        Ok(s) => panic!("Should have returned an error, but got: {}", s),
+        Err(e) => {
+            if e.pr_str(false) == "expected ')', got EOF" {
+                ()
+            } else {
+                panic!("Unexpected error message: {}", e.pr_str(false));
+            }
+        },
+    }
+}
+
+#[test]
+fn reader_unfinished_string() {
+    let env = mal_env();
+
+    match rep("\"hello", &env) {
+        Ok(s) => panic!("Should have returned an error, but got: {}", s),
+        Err(e) => {
+            if e.pr_str(false) == "expected '\"', got EOF" {
+                ()
+            } else {
+                panic!("Unexpected error message: {}", e.pr_str(false));
+            }
+        },
+    }
+}
+
+#[test]
 fn rep_addition() {
     let env = mal_env();
     initialize_mal_env(&env, vec![]);
