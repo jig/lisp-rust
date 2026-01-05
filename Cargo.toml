@@ -1,6 +1,6 @@
 [package]
 name = "mal"
-version = "0.1.9"
+version = "0.1.10"
 authors = ["Jordi Íñigo Griera"]
 edition = "2024"
 
