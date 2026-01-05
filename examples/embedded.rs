@@ -44,7 +44,7 @@ fn main() {
     let env = mal_env();
     initialize_mal_env(&env, vec![]);
 
-    // env_sets(&env, "time-ns", func(time_ns));
+    // env_sets(&env, "time/ns", func(time_ns));
 
     // Leak env to get a 'static reference, then set eval
     let env_static: &'static mal::Env = Box::leak(Box::new(env.clone()));

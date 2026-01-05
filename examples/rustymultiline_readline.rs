@@ -71,7 +71,7 @@ static BOOT_TIME: OnceLock<std::time::Instant> = OnceLock::new();
 
 fn time_ns(a: MalArgs) -> MalRet {
     if a.len() != 0 {
-        return error("time-ns/us/ms/s expect 0 arguments");
+        return error("time/ns/us/ms/s expect 0 arguments");
     }
     let boot = BOOT_TIME.get().unwrap();
     let elapsed = boot.elapsed();
@@ -163,10 +163,10 @@ fn main() {
     initialize_mal_env(&env, vec![]);
 
     env_sets(&env, "slurp", func(slurp));
-    env_sets(&env, "time-ns", func(time_ns));
-    env_sets(&env, "time-ms", func(time_ms));
-    env_sets(&env, "time-us", func(time_us));
-    env_sets(&env, "time-s", func(time_s));
+    env_sets(&env, "time/ns", func(time_ns));
+    env_sets(&env, "time/ms", func(time_ms));
+    env_sets(&env, "time/us", func(time_us));
+    env_sets(&env, "time/s", func(time_s));
     env_sets(&env, "prn", func(|a| {
                 println!("{}", pr_seq(&a, true, "", "", " "));
                 Ok(Nil)

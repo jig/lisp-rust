@@ -9,7 +9,7 @@ pub trait SystemOps {
     fn read_file(&self, path: &str) -> Result<String, String>;
 
     /// Get current time in milliseconds since UNIX epoch
-    /// Used by the `time-ms` function
+    /// Used by the `time/ms` function
     fn time_ms(&self) -> Result<i64, String>;
 
     /// Read a line from user input with a prompt
