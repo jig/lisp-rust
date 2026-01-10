@@ -30,16 +30,25 @@ pub fn env_bind(outer: Env, mbinds: &MalVal, exprs: Vec<MalVal>) -> Result<Env, 
     let env = env_new(Some(outer));
     match mbinds {
         List(binds, _) | Vector(binds, _) => {
+            let mut has_variadic = false;
             for (i, b) in binds.iter().enumerate() {
                 match b {
                     Sym(s) if s == "&" => {
                         env_set(&env, &binds[i + 1], list(exprs[i..].to_vec()))?;
+                        has_variadic = true;
                         break;
                     }
                     _ => {
+                        if i >= exprs.len() {
+                            return error("wrong number of arguments: function requires more arguments than provided");
+                        }
                         env_set(&env, b, exprs[i].clone())?;
                     }
                 }
+            }
+            // Check for too many arguments (only if not variadic)
+            if !has_variadic && exprs.len() > binds.len() {
+                return error("wrong number of arguments: function received more arguments than expected");
             }
             Ok(env)
         }

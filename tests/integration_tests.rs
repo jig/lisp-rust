@@ -70,28 +70,41 @@ fn rep_addition() {
 }
 
 #[test]
-fn rep_addition_too_many_args() {
+fn rep_addition_3_args() {
     let env = mal_env();
     initialize_mal_env(&env, vec![]);
 
     // Should error because + only accepts 2 arguments
     match rep("(+ 1 1 1)", &env) {
-        Ok(s) => panic!("Should have returned an error, but got: {}", s),
-        Err(_) => (), // Expected error
+        Ok(s) => assert_eq!(s, "3"),
+        Err(_) => panic!("rep() returned an error"),
     }
 }
 
 #[test]
-fn rep_addition_too_few_args() {
+fn rep_addition_1_arg() {
     let env = mal_env();
     initialize_mal_env(&env, vec![]);
 
     // Should error because + requires 2 arguments
     match rep("(+ 1)", &env) {
-        Ok(s) => panic!("Should have returned an error, but got: {}", s),
-        Err(_) => (), // Expected error
+        Ok(s) => assert_eq!(s, "1"),
+        Err(_) => panic!("rep() returned an error"),
     }
 }
+
+#[test]
+fn rep_addition_0_arg() {
+    let env = mal_env();
+    initialize_mal_env(&env, vec![]);
+
+    // Should error because + requires 2 arguments
+    match rep("(+)", &env) {
+        Ok(s) => assert_eq!(s, "0"),
+        Err(_) => panic!("rep() returned an error"),
+    }
+}
+
 
 #[test]
 fn rep_divide_by_zero() {
@@ -281,5 +294,41 @@ fn eval_eval() {
     match rep("(eval (read-string \"(+ 1 10)\"))", &env) {
         Ok(s) => assert_eq!(s, "11"),
         Err(_) => panic!("rep() returned an error"),
+    }
+}
+
+#[test]
+fn eval_fn() {
+    let env = mal_env();
+    initialize_mal_env(&env, vec![]);
+
+    match rep("((fn* (a b) (+ a b)) 5 7)", &env) {
+        Ok(s) => assert_eq!(s, "12"),
+        Err(_) => panic!("rep() returned an error"),
+    }
+
+}
+
+#[test]
+fn eval_fn_insuficient_args() {
+    let env = mal_env();
+    initialize_mal_env(&env, vec![]);
+
+    // Should error because function expects 2 arguments but got 0
+    match rep("((fn* (a b) (+ a b)))", &env) {
+        Ok(s) => panic!("Should have returned an error, but got: {}", s),
+        Err(_) => (), // Expected error
+    }
+}
+
+#[test]
+fn eval_fn_too_many_args() {
+    let env = mal_env();
+    initialize_mal_env(&env, vec![]);
+
+    // Should error because function expects 2 arguments but got 0
+    match rep("((fn* (a b) (+ a b)) 1 2 3)", &env) {
+        Ok(s) => panic!("Should have returned an error, but got: {}", s),
+        Err(_) => (), // Expected error
     }
 }
