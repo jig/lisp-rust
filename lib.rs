@@ -198,6 +198,9 @@ pub fn eval(orig_ast: &MalVal, orig_env: &Env) -> MalRet {
                         }
                     }
                     Sym(a0sym) if a0sym == "do" => {
+                        if l.len() == 1 {
+                            return Ok(Nil);
+                        }
                         for i in 1..l.len() - 1 {
                             let _ = eval(&l[i], env)?;
                         }
